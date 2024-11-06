@@ -18,6 +18,7 @@
 package main // import "github.com/minio/minio"
 
 import (
+	"fmt"
 	"os"
 
 	// MUST be first import.
@@ -27,5 +28,6 @@ import (
 )
 
 func main() {
+	fmt.Println("hhhhhhh")
 	minio.Main(os.Args)
 }
