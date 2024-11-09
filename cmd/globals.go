@@ -228,6 +228,7 @@ var (
 
 	globalNotificationSys *NotificationSys
 
+	/* 这个是什么 */
 	globalEventNotifier    *EventNotifier
 	globalNotifyTargetList *event.TargetList
 	globalLambdaTargetList *levent.TargetList
@@ -256,7 +257,7 @@ var (
 	globalIsTLS bool
 
 	globalTLSCerts *certs.Manager
-
+/* 全局的server变量 */
 	globalHTTPServer        *xhttp.Server
 	globalTCPOptions        xhttp.TCPOptions
 	globalHTTPServerErrorCh = make(chan error)
@@ -279,6 +280,7 @@ var (
 	globalNodes []Node
 
 	// The name of this local node, fetched from arguments
+	/* 当前node的hostname? */
 	globalLocalNodeName    string
 	globalLocalNodeNameHex string
 	globalNodeNamesHex     = make(map[string]struct{})
@@ -398,7 +400,7 @@ var (
 	globalForwarder *handlers.Forwarder
 
 	globalTierConfigMgr *TierConfigMgr
-
+	/* web ui相关 */
 	globalConsoleSrv *consoleapi.Server
 
 	// handles service freeze or un-freeze S3 API calls.

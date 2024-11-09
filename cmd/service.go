@@ -19,6 +19,12 @@ package cmd
 
 import (
 	"context"
+	/* Go 语言的 context 包用于在多个 Goroutine 之间传递请求范围的值、取消信号和超时时间。context 包主要用于控制 Goroutine 的生命周期，特别是在处理并发请求和多 Goroutine 协作时非常有用。
+
+	context 包的主要用途
+	管理 Goroutine 生命周期：在多个 Goroutine 之间传递取消信号，当一个任务完成或取消时可以通知相关的 Goroutine 停止执行。
+	传递请求范围的值：可以在 context 中携带一些请求相关的信息，如认证令牌、请求 ID、用户信息等。
+	设置超时时间：可以使用 context 实现超时机制，指定某个操作的最大执行时间，如果超时会自动取消操作。 */
 	"os"
 	"os/exec"
 	"runtime"
@@ -44,6 +50,13 @@ var globalServiceSignalCh = make(chan serviceSignal)
 
 // GlobalContext context that is canceled when server is requested to shut down.
 // cancelGlobalContext can be used to indicate server shutdown.
+/* 创建根 Context：
+context.Background() 创建了一个根 Context，用于没有取消、超时或传值的情况。
+创建可取消的 Context：
+context.WithCancel 创建了一个可以手动取消的 Context。它返回两个值：
+GlobalContext：这是一个新的 Context，可以在其他 Goroutine 中使用。
+cancelGlobalContext：这是一个取消函数，当调用它时，GlobalContext 会被取消，相关的 Goroutine 会收到取消信号，停止执行。
+*/
 var GlobalContext, cancelGlobalContext = context.WithCancel(context.Background())
 
 // restartProcess starts a new process passing it the active fd's. It
@@ -51,6 +64,7 @@ var GlobalContext, cancelGlobalContext = context.WithCancel(context.Background()
 // arguments as when it was originally started. This allows for a newly
 // deployed binary to be started. It returns the pid of the newly started
 // process when successful.
+/* 好像是用于重启minio进程的 */
 func restartProcess() error {
 	if runtime.GOOS == globalWindowsOSName {
 		cmd := exec.Command(os.Args[0], os.Args[1:]...)

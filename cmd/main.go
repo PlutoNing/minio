@@ -97,7 +97,7 @@ FLAGS:
 VERSION:
   {{.Version}}
 `
-
+/* 好像是主类 */
 func newApp(name string) *cli.App {
 	// Collection of minio commands currently supported are.
 	commands := []cli.Command{}
@@ -198,6 +198,7 @@ func printMinIOVersion(c *cli.Context) {
 var debugNoExit = env.Get("_MINIO_DEBUG_NO_EXIT", "") != ""
 
 // Main main for minio server.
+/*  */
 func Main(args []string) {
 	// Set the minio app name.
 	appName := filepath.Base(args[0])

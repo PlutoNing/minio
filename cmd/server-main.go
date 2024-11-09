@@ -737,7 +737,7 @@ func initializeLogRotate(ctx *cli.Context) (io.WriteCloser, error) {
 	return output, nil
 }
 
-// serverMain handler called for 'minio server' command.
+// serverMain handler called for 'minio server' command.主函数
 func serverMain(ctx *cli.Context) {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
@@ -746,7 +746,7 @@ func serverMain(ctx *cli.Context) {
 	signal.Notify(globalOSSignalCh, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
 
 	go handleSignals()
-
+	/* 2024年11月7日00:23:46 */
 	setDefaultProfilerRates()
 
 	// Initialize globalConsoleSys system

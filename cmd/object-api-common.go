@@ -50,6 +50,7 @@ const (
 var globalObjLayerMutex sync.RWMutex
 
 // Global object layer, only accessed by globalObjectAPI.
+/*  */
 var globalObjectAPI ObjectLayer
 
 type storageOpts struct {

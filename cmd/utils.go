@@ -507,6 +507,7 @@ type minioProfiler interface {
 }
 
 // Global profiler to be used by service go-routine.
+/* var (...) 的形式适用于包级别变量（如这里的全局变量声明），也适用于函数级别的多变量声明。 */
 var (
 	globalProfiler   map[string]minioProfiler
 	globalProfilerMu sync.Mutex
@@ -847,6 +848,10 @@ func lcp(strs []string, pre bool) string {
 }
 
 // Returns the mode in which MinIO is running
+/* 定义了一个 getMinioMode 函数，用于返回 MinIO 的运行模式。
+根据全局变量的状态，函数判断 MinIO 当前的部署方式并返回相应
+的模式字符串。不同的模式可能代表 MinIO 的不同存储配置方式，
+如分布式存储、纠删码、单机文件系统等。 */
 func getMinioMode() string {
 	switch {
 	case globalIsDistErasure:

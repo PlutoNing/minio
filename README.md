@@ -215,7 +215,7 @@ For example, consider a MinIO deployment behind a proxy `https://minio.example.n
 
 ## Test using MinIO Client `mc`
 
-`mc` provides a modern alternative to UNIX commands like ls, cat, cp, mirror, diff etc. It supports filesystems and Amazon S3 compatible cloud storage services. Follow the MinIO Client [Quickstart Guide](https://min.io/docs/minio/linux/reference/minio-mc.html#quickstart) for further instructions.
+`mc` 提供了现代化的替代方案，用于实现 UNIX 命令，如 ls、cat、cp、mirror、diff 等。它支持文件系统和兼容 Amazon S3 的云存储服务。请参阅 MinIO 客户端快速入门指南 [Quickstart Guide](https://min.io/docs/minio/linux/reference/minio-mc.html#quickstart) 以获取更多说明。
 
 ## Upgrading MinIO
 

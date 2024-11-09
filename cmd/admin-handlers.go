@@ -14,7 +14,11 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
+/* 
+2024年11月7日23:51:12
+好像和rest的控制接口有关
 
+*/
 package cmd
 
 import (
@@ -85,9 +89,12 @@ const (
 // ServerUpdateV2Handler - POST /minio/admin/v3/update?updateURL={updateURL}&type=2
 // ----------
 // updates all minio servers and restarts them gracefully.
+/* 处理重启的信号 */
 func (a adminAPIHandlers) ServerUpdateV2Handler(w http.ResponseWriter, r *http.Request) {
+	/* 获取r的ctx */
 	ctx := r.Context()
 
+	/* 校验权限 */
 	objectAPI, _ := validateAdminReq(ctx, w, r, policy.ServerUpdateAdminAction)
 	if objectAPI == nil {
 		return
@@ -1021,6 +1028,7 @@ type StartProfilingResult struct {
 // StartProfilingHandler - POST /minio/admin/v3/profiling/start?profilerType={profilerType}
 // ----------
 // Enable server profiling
+/* rest开启server的profile */
 func (a adminAPIHandlers) StartProfilingHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -2511,7 +2519,9 @@ func getKubernetesInfo(dctx context.Context) madmin.KubernetesInfo {
 	return ki
 }
 
-func fetchHealthInfo(healthCtx context.Context, objectAPI ObjectLayer, query *url.Values, healthInfoCh chan madmin.HealthInfo, healthInfo madmin.HealthInfo) {
+/* 获取server的指标信息? */
+func fetchHealthInfo(healthCtx context.Context, objectAPI ObjectLayer, 
+	query *url.Values, healthInfoCh chan madmin.HealthInfo, healthInfo madmin.HealthInfo) {
 	hostAnonymizer := createHostAnonymizer()
 
 	anonParam := query.Get(anonymizeParam)
@@ -3470,6 +3480,7 @@ func getSubnetAdminPublicKey() []byte {
 	return subnetAdminPublicKey
 }
 
+/*  */
 func createHostAnonymizerForFSMode() map[string]string {
 	hostAnonymizer := map[string]string{
 		globalLocalNodeName: "server1",

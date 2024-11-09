@@ -51,14 +51,15 @@ const (
 )
 
 // Server - extended http.Server supports multiple addresses to serve and enhanced connection handling.
+/* ? */
 type Server struct {
 	http.Server
-	Addrs         []string      // addresses on which the server listens for new connection.
-	TCPOptions    TCPOptions    // all the configurable TCP conn specific configurable options.
-	listenerMutex sync.Mutex    // to guard 'listener' field.
+	Addrs         []string      // addresses on which the server listens for new connection.服务器监听的地址列表
+	TCPOptions    TCPOptions    // all the configurable TCP conn specific configurable options.配置 TCP 连接的选项
+	listenerMutex sync.Mutex    // to guard 'listener' field.保护 listener 字段的互斥锁
 	listener      *httpListener // HTTP listener for all 'Addrs' field.
-	inShutdown    uint32        // indicates whether the server is in shutdown or not
-	requestCount  int32         // counter holds no. of request in progress.
+	inShutdown    uint32        // indicates whether the server is in shutdown or not.指示服务器是否正在关闭的标志
+	requestCount  int32         // counter holds no. of request in progress.当前正在处理的请求数量计数器
 }
 
 // GetRequestCount - returns number of request in progress.

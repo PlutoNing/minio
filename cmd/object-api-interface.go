@@ -240,6 +240,7 @@ func (o *ObjectOptions) SetEvalRetentionBypassFn(f EvalRetentionBypassFn) {
 }
 
 // ObjectLayer implements primitives for object API layer.
+/*  */
 type ObjectLayer interface {
 	// Locking operations on object.
 	NewNSLock(bucket string, objects ...string) RWLocker

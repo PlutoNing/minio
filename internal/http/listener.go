@@ -81,6 +81,7 @@ func (listener *httpListener) Accept() (conn net.Conn, err error) {
 }
 
 // Close - closes underneath all TCP listeners.
+/* 这些链接是处理什么的 */
 func (listener *httpListener) Close() (err error) {
 	listener.ctxCanceler()
 

@@ -34,16 +34,19 @@ import (
 // If any of the supplied actions are allowed it will be successful.
 // If nil ObjectLayer is returned, the operation is not permitted.
 // When nil ObjectLayer has been returned an error has always been sent to w.
-func validateAdminReq(ctx context.Context, w http.ResponseWriter, r *http.Request, actions ...policy.AdminAction) (ObjectLayer, auth.Credentials) {
+/* 校验权限的接口.  */
+func validateAdminReq(ctx context.Context, w http.ResponseWriter, 
+	r *http.Request, actions ...policy.AdminAction) (ObjectLayer, auth.Credentials) {
 	// Get current object layer instance.
 	objectAPI := newObjectLayerFn()
 	if objectAPI == nil || globalNotificationSys == nil {
 		writeErrorResponseJSON(ctx, w, errorCodes.ToAPIErr(ErrServerNotInitialized), r.URL)
 		return nil, auth.Credentials{}
 	}
-
+	/* actions比如可能是policy.ServerUpdateAdminAction */
 	for _, action := range actions {
 		// Validate request signature.
+		/* 这里校验权限 */
 		cred, adminAPIErr := checkAdminRequestAuth(ctx, r, action, "")
 		switch adminAPIErr {
 		case ErrNone:

@@ -28,6 +28,7 @@ import (
 	"github.com/rs/cors"
 )
 
+/*  */
 func newHTTPServerFn() *xhttp.Server {
 	globalObjLayerMutex.RLock()
 	defer globalObjLayerMutex.RUnlock()
@@ -40,18 +41,21 @@ func setHTTPServer(h *xhttp.Server) {
 	globalObjLayerMutex.Unlock()
 }
 
+/* web ui相关 */
 func newConsoleServerFn() *consoleapi.Server {
 	globalObjLayerMutex.RLock()
 	defer globalObjLayerMutex.RUnlock()
 	return globalConsoleSrv
 }
 
+/* 设置globalConsoleSrv */
 func setConsoleSrv(srv *consoleapi.Server) {
 	globalObjLayerMutex.Lock()
 	globalConsoleSrv = srv
 	globalObjLayerMutex.Unlock()
 }
 
+/* 对象层,是个全局变量,这里加锁是保护 */
 func newObjectLayerFn() ObjectLayer {
 	globalObjLayerMutex.RLock()
 	defer globalObjLayerMutex.RUnlock()
