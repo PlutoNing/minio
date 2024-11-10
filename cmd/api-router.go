@@ -69,6 +69,13 @@ func setObjectLayer(o ObjectLayer) {
 }
 
 // objectAPIHandlers implements and provides http handlers for S3 API.
+/* objectAPIHandlers 是一个结构体类型（struct），用于实现 S3 API 的 HTTP 处理函数。
+具体来说，这个结构体包含一个函数类型的字段 ObjectAPI，该字段可以通过返回 ObjectLayer 
+实例来实现特定的 API 功能。
+
+ObjectAPI 字段的类型是 func() ObjectLayer，即这是一个不接受任何参数、返回 ObjectLayer 
+类型的函数。这种写法允许 ObjectAPI 字段动态绑定到一个函数上，可以在运行时通过该函数实现
+对不同 ObjectLayer 实例的访问。 */
 type objectAPIHandlers struct {
 	ObjectAPI func() ObjectLayer
 }

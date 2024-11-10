@@ -45,6 +45,7 @@ type grant struct {
 	Permission string  `xml:"Permission"`
 }
 
+/* 表示请求的acl? */
 type accessControlPolicy struct {
 	XMLName           xml.Name `xml:"AccessControlPolicy"`
 	Owner             Owner    `xml:"Owner"`
@@ -59,6 +60,7 @@ type accessControlPolicy struct {
 // to set ACL for a bucket, this is a dummy call
 // only responds success if the ACL is private.
 func (api objectAPIHandlers) PutBucketACLHandler(w http.ResponseWriter, r *http.Request) {
+	/* 这个ctx是什么 */
 	ctx := newContext(r, w, "PutBucketACL")
 
 	defer logger.AuditLog(ctx, w, r, mustGetClaimsFromToken(r))
@@ -66,6 +68,7 @@ func (api objectAPIHandlers) PutBucketACLHandler(w http.ResponseWriter, r *http.
 	vars := mux.Vars(r)
 	bucket := vars["bucket"]
 
+	/* 返回一个对象层api */
 	objAPI := api.ObjectAPI()
 	if objAPI == nil {
 		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(ErrServerNotInitialized), r.URL)
@@ -80,6 +83,8 @@ func (api objectAPIHandlers) PutBucketACLHandler(w http.ResponseWriter, r *http.
 	}
 
 	// Before proceeding validate if bucket exists.
+	/* 2024年11月10日00:59:17好像开始动一点了,第一次
+	获取bucket的信息? */
 	_, err := objAPI.GetBucketInfo(ctx, bucket, BucketOptions{})
 	if err != nil {
 		writeErrorResponse(ctx, w, toAPIError(ctx, err), r.URL)
@@ -87,7 +92,7 @@ func (api objectAPIHandlers) PutBucketACLHandler(w http.ResponseWriter, r *http.
 	}
 
 	aclHeader := r.Header.Get(xhttp.AmzACL)
-	if aclHeader == "" {
+	if aclHeader == "" {/* 没有aclheader的情况? */
 		acl := &accessControlPolicy{}
 		if err = xmlDecoder(r.Body, acl, r.ContentLength); err != nil {
 			if terr, ok := err.(*xml.SyntaxError); ok && terr.Msg == io.EOF.Error() {
@@ -116,7 +121,8 @@ func (api objectAPIHandlers) PutBucketACLHandler(w http.ResponseWriter, r *http.
 	}
 }
 
-// GetBucketACLHandler - GET Bucket ACL
+/* GetBucketACLHandler - GET Bucket ACL
+获取bucket的acl? */
 // -----------------
 // This operation uses the ACL
 // subresource to return the ACL of a specified bucket.
@@ -148,6 +154,7 @@ func (api objectAPIHandlers) GetBucketACLHandler(w http.ResponseWriter, r *http.
 		return
 	}
 
+	/*  */
 	acl := &accessControlPolicy{}
 	acl.AccessControlList.Grants = append(acl.AccessControlList.Grants, grant{
 		Grantee: grantee{
@@ -165,6 +172,7 @@ func (api objectAPIHandlers) GetBucketACLHandler(w http.ResponseWriter, r *http.
 }
 
 // PutObjectACLHandler - PUT Object ACL
+/* 这又是put对象的acl? */
 // -----------------
 // This operation uses the ACL subresource
 // to set ACL for a bucket, this is a dummy call
@@ -176,6 +184,7 @@ func (api objectAPIHandlers) PutObjectACLHandler(w http.ResponseWriter, r *http.
 
 	vars := mux.Vars(r)
 	bucket := vars["bucket"]
+	/* 获取请求里的object? */
 	object, err := unescapePath(vars["object"])
 	if err != nil {
 		writeErrorResponse(ctx, w, toAPIError(ctx, err), r.URL)
@@ -228,6 +237,7 @@ func (api objectAPIHandlers) PutObjectACLHandler(w http.ResponseWriter, r *http.
 }
 
 // GetObjectACLHandler - GET Object ACL
+/* get 对象的acl? */
 // -----------------
 // This operation uses the ACL
 // subresource to return the ACL of a specified object.
@@ -278,3 +288,7 @@ func (api objectAPIHandlers) GetObjectACLHandler(w http.ResponseWriter, r *http.
 		return
 	}
 }
+
+
+/* 2024年11月10日01:05:12
+稀里糊涂 */

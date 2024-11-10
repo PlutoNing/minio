@@ -29,7 +29,9 @@ import (
 
 var errConfigNotFound = errors.New("config file not found")
 
+/* 从oss接口读取configfile */
 func readConfigWithMetadata(ctx context.Context, store objectIO, configFile string, opts ObjectOptions) ([]byte, ObjectInfo, error) {
+	/* 从oss接口读取 */
 	r, err := store.GetObjectNInfo(ctx, minioMetaBucket, configFile, nil, http.Header{}, opts)
 	if err != nil {
 		if isErrObjectNotFound(err) {
@@ -50,6 +52,8 @@ func readConfigWithMetadata(ctx context.Context, store objectIO, configFile stri
 	return buf, r.ObjInfo, nil
 }
 
+/* 读取configfile,通过store这个oss接口.
+返回的是oss接口返回的reader的buf */
 func readConfig(ctx context.Context, store objectIO, configFile string) ([]byte, error) {
 	buf, _, err := readConfigWithMetadata(ctx, store, configFile, ObjectOptions{})
 	return buf, err

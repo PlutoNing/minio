@@ -232,7 +232,7 @@ var (
 	globalEventNotifier    *EventNotifier
 	globalNotifyTargetList *event.TargetList
 	globalLambdaTargetList *levent.TargetList
-
+/* 代表bucket的meta集合 */
 	globalBucketMetadataSys *BucketMetadataSys
 	globalBucketMonitor     *bandwidth.Monitor
 	globalPolicySys         *PolicySys
@@ -241,6 +241,7 @@ var (
 
 	globalLifecycleSys       *LifecycleSys
 	globalBucketSSEConfigSys *BucketSSEConfigSys
+	/*  */
 	globalBucketTargetSys    *BucketTargetSys
 	// globalAPIConfig controls S3 API requests throttling,
 	// healthCheck readiness deadlines and cors settings.
@@ -324,12 +325,14 @@ var (
 
 	globalBucketObjectLockSys *BucketObjectLockSys
 	globalBucketQuotaSys      *BucketQuotaSys
+	/* 应该是bucket的版本系统 */
 	globalBucketVersioningSys *BucketVersioningSys
 
 	// Allocated etcd endpoint for config and bucket DNS.
 	globalEtcdClient *etcd.Client
 
 	// Cluster replication manager.
+	/* 站点复制管理器? */
 	globalSiteReplicationSys SiteReplicationSys
 
 	// Cluster replication resync metrics
@@ -368,6 +371,7 @@ var (
 
 	// Deployment ID - unique per deployment
 	globalDeploymentIDPtr atomic.Pointer[string]
+	/*  */
 	globalDeploymentID    = func() string {
 		ptr := globalDeploymentIDPtr.Load()
 		if ptr == nil {
@@ -390,7 +394,7 @@ var (
 	globalProxyEndpoints []ProxyEndpoint
 
 	globalInternodeTransport http.RoundTripper
-
+/* 端口? */
 	globalRemoteTargetTransport http.RoundTripper
 
 	globalDNSCache = &dnscache.Resolver{

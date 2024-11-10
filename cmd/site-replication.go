@@ -202,6 +202,7 @@ type SiteReplicationSys struct {
 	enabled bool
 
 	// In-memory and persisted multi-site replication state.
+	/* 表示站点复制状态 */
 	state srState
 
 	iamMetaCache srIAMCache
@@ -215,6 +216,7 @@ type srStateV1 struct {
 	Name string `json:"name"`
 
 	// Peers maps peers by their deploymentID
+	/* 表示站点复制的peer们 */
 	Peers                   map[string]madmin.PeerInfo `json:"peers"`
 	ServiceAccountAccessKey string                     `json:"serviceAccountAccessKey"`
 	UpdatedAt               time.Time                  `json:"updatedAt"`
@@ -1526,6 +1528,7 @@ func (c *SiteReplicationSys) PeerSTSAccHandler(ctx context.Context, stsCred *mad
 
 // BucketMetaHook - called when bucket meta changes happen and need to be
 // replicated to peer clusters.
+/*  把改变的bucket meta传到peer? */
 func (c *SiteReplicationSys) BucketMetaHook(ctx context.Context, item madmin.SRBucketMeta) error {
 	// The change has already been applied to the local cluster at this
 	// point, and only needs to be updated on all remote peer clusters.
@@ -1536,7 +1539,9 @@ func (c *SiteReplicationSys) BucketMetaHook(ctx context.Context, item madmin.SRB
 		return nil
 	}
 
-	cerr := c.concDo(nil, func(d string, p madmin.PeerInfo) error {
+	cerr := c.concDo(nil, 
+		/* 这个参数是要对peer调用的方法 */
+		func(d string, p madmin.PeerInfo) error {
 		admClient, err := c.getAdminClient(ctx, d)
 		if err != nil {
 			return wrapSRErr(err)
@@ -1544,6 +1549,7 @@ func (c *SiteReplicationSys) BucketMetaHook(ctx context.Context, item madmin.SRB
 
 		return c.annotatePeerErr(p.Name, replicateBucketMetadata, admClient.SRPeerReplicateBucketMeta(ctx, item))
 	},
+	/* 这个是操作的名字, 用于报错信息 */
 		replicateBucketMetadata,
 	)
 	return errors.Unwrap(cerr)
@@ -1817,12 +1823,14 @@ func (c *SiteReplicationSys) PeerBucketLCConfigHandler(ctx context.Context, buck
 
 // getAdminClient - NOTE: ensure to take at least a read lock on SiteReplicationSys
 // before calling this.
+/* admin client是什么 */
 func (c *SiteReplicationSys) getAdminClient(ctx context.Context, deploymentID string) (*madmin.AdminClient, error) {
 	creds, err := c.getPeerCreds()
 	if err != nil {
 		return nil, err
 	}
 
+	/* 获取id对应的peer */
 	peer, ok := c.state.Peers[deploymentID]
 	if !ok {
 		return nil, errSRPeerNotFound
@@ -2284,27 +2292,36 @@ func (c *SiteReplicationSys) newConcErr(errMap map[string]error, actionName stri
 
 // concDo calls actions concurrently. selfActionFn is run for the current
 // cluster and peerActionFn is run for each peer replication cluster.
-func (c *SiteReplicationSys) concDo(selfActionFn func() error, peerActionFn func(deploymentID string, p madmin.PeerInfo) error, actionName string) error {
+func (c *SiteReplicationSys) concDo(selfActionFn func() error, 
+					peerActionFn func(deploymentID string, p madmin.PeerInfo) error, actionName string) error {
+
 	depIDs := make([]string, 0, len(c.state.Peers))
 	for d := range c.state.Peers {
 		depIDs = append(depIDs, d)
 	}
 	errs := make([]error, len(c.state.Peers))
+	/* sync.WaitGroup 是一个用于并发编程的同步原语，用于等待一组 Goroutine 
+	完成任务。它可以帮助我们确保主 Goroutine 在其他 Goroutine 完成之前不会退出。 */
 	var wg sync.WaitGroup
 	wg.Add(len(depIDs))
 	for i := range depIDs {
 		go func(i int) {
+
 			defer wg.Done()
+			/* 处理这个peer */
 			if depIDs[i] == globalDeploymentID() {
 				if selfActionFn != nil {
 					errs[i] = selfActionFn()
 				}
 			} else {
+				/* 这是对peer调用的方法 */
 				errs[i] = peerActionFn(depIDs[i], c.state.Peers[depIDs[i]])
 			}
 		}(i)
 	}
+
 	wg.Wait()
+
 	errMap := make(map[string]error, len(c.state.Peers))
 	for i, depID := range depIDs {
 		errMap[depID] = errs[i]
@@ -2326,6 +2343,7 @@ func (c *SiteReplicationSys) annotateErr(annotation string, err error) error {
 	return fmt.Errorf("%s: %s: %w", c.state.Name, annotation, err)
 }
 
+/*  */
 func (c *SiteReplicationSys) annotatePeerErr(dstPeer string, annotation string, err error) error {
 	if err == nil {
 		return nil
@@ -2611,18 +2629,23 @@ func (c *SiteReplicationSys) RemoveRemoteTargetsForEndpoint(ctx context.Context,
 
 // Other helpers
 
+/* 获取peer的admin client */
 func getAdminClient(endpoint, accessKey, secretKey string) (*madmin.AdminClient, error) {
+
 	epURL, err := url.Parse(endpoint)
 	if err != nil {
 		return nil, err
 	}
+
 	if globalBucketTargetSys.isOffline(epURL) {
 		return nil, RemoteTargetConnectionErr{Endpoint: epURL.String(), Err: fmt.Errorf("remote target is offline for endpoint %s", epURL.String())}
 	}
+
 	client, err := madmin.New(epURL.Host, accessKey, secretKey, epURL.Scheme == "https")
 	if err != nil {
 		return nil, err
 	}
+
 	client.SetCustomTransport(globalRemoteTargetTransport)
 	return client, nil
 }

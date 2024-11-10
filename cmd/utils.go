@@ -770,6 +770,7 @@ func newContext(r *http.Request, w http.ResponseWriter, api string) context.Cont
 	vars := mux.Vars(r)
 	bucket := vars["bucket"]
 	object := likelyUnescapeGeneric(vars["object"], url.PathUnescape)
+	/* 定义了一个log的reqinfo */
 	reqInfo := &logger.ReqInfo{
 		DeploymentID: globalDeploymentID(),
 		RequestID:    reqID,

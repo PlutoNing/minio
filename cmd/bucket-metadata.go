@@ -45,6 +45,7 @@ import (
 	"github.com/minio/sio"
 )
 
+/*  */
 const (
 	legacyBucketObjectLockEnabledConfigFile = "object-lock-enabled.json"
 	legacyBucketObjectLockEnabledConfig     = `{"x-amz-bucket-object-lock-enabled":true}`
@@ -66,10 +67,12 @@ var (
 // Only changing meaning of fields requires a version bump.
 // bucketMetadataFormat refers to the format.
 // bucketMetadataVersion can be used to track a rolling upgrade of a field.
+/* 表示一个bucket的meta */
 type BucketMetadata struct {
 	Name                        string
 	Created                     time.Time
 	LockEnabled                 bool // legacy not used anymore.
+	/*  */
 	PolicyConfigJSON            []byte
 	NotificationConfigXML       []byte
 	LifecycleConfigXML          []byte
@@ -103,6 +106,7 @@ type BucketMetadata struct {
 	versioningConfig       *versioning.Versioning
 	sseConfig              *bucketsse.BucketSSEConfig
 	taggingConfig          *tags.Tags
+	/* 表示bucket的quota信息 */
 	quotaConfig            *madmin.BucketQuota
 	replicationConfig      *replication.Config
 	bucketTargetConfig     *madmin.BucketTargets
@@ -110,6 +114,7 @@ type BucketMetadata struct {
 }
 
 // newBucketMetadata creates BucketMetadata with the supplied name and Created to Now.
+/* 创建一个空的bucket meta data */
 func newBucketMetadata(name string) BucketMetadata {
 	return BucketMetadata{
 		Name: name,
@@ -188,13 +193,21 @@ func (b *BucketMetadata) SetCreatedAt(createdAt time.Time) {
 
 // Load - loads the metadata of bucket by name from ObjectLayer api.
 // If an error is returned the returned metadata will be default initialized.
+/* 通过oss的api获得bucket的meta
+@name可能是bucket的name
+
+从oss接口根据path读取buf, 然后解码*/
 func readBucketMetadata(ctx context.Context, api ObjectLayer, name string) (BucketMetadata, error) {
 	if name == "" {
 		internalLogIf(ctx, errors.New("bucket name cannot be empty"), logger.WarningKind)
 		return BucketMetadata{}, errInvalidArgument
 	}
 	b := newBucketMetadata(name)
+
+	/* buckets+name+.metadata.bin */
 	configFile := path.Join(bucketMetaPrefix, name, bucketMetadataFile)
+	/* 根据config file的path读取这个config */
+	/* data就是从oss读取的buf */
 	data, err := readConfig(ctx, api, configFile)
 	if err != nil {
 		return b, err
@@ -203,11 +216,13 @@ func readBucketMetadata(ctx context.Context, api ObjectLayer, name string) (Buck
 		return b, fmt.Errorf("loadBucketMetadata: no data")
 	}
 	// Read header
+	/* 处理格式的header */
 	switch binary.LittleEndian.Uint16(data[0:2]) {
 	case bucketMetadataFormat:
 	default:
 		return b, fmt.Errorf("loadBucketMetadata: unknown format: %d", binary.LittleEndian.Uint16(data[0:2]))
 	}
+
 	switch binary.LittleEndian.Uint16(data[2:4]) {
 	case bucketMetadataVersion:
 	default:
@@ -217,12 +232,15 @@ func readBucketMetadata(ctx context.Context, api ObjectLayer, name string) (Buck
 	return b, err
 }
 
+/* 好像是从oss加载到内存的meta */
 func loadBucketMetadataParse(ctx context.Context, objectAPI ObjectLayer, bucket string, parse bool) (BucketMetadata, error) {
+	/* 返回unmarshal之后的buf */
 	b, err := readBucketMetadata(ctx, objectAPI, bucket)
 	b.Name = bucket // in-case parsing failed for some reason, make sure bucket name is not empty.
 	if err != nil && !errors.Is(err, errConfigNotFound) {
 		return b, err
 	}
+
 	if err == nil {
 		b.defaultTimestamps()
 	}
@@ -238,7 +256,7 @@ func loadBucketMetadataParse(ctx context.Context, objectAPI ObjectLayer, bucket 
 			return b, err
 		}
 
-		if len(configs) > 0 {
+		if len(configs) > 0 {/*  */
 			// Old bucket without bucket metadata. Hence we migrate existing settings.
 			if err = b.convertLegacyConfigs(ctx, objectAPI, configs); err != nil {
 				return b, err
@@ -246,7 +264,7 @@ func loadBucketMetadataParse(ctx context.Context, objectAPI ObjectLayer, bucket 
 		}
 	}
 
-	if parse {
+	if parse {/*  */
 		// nothing to update, parse and proceed.
 		if err = b.parseAllConfigs(ctx, objectAPI); err != nil {
 			return b, err
@@ -262,14 +280,18 @@ func loadBucketMetadataParse(ctx context.Context, objectAPI ObjectLayer, bucket 
 }
 
 // loadBucketMetadata loads and migrates to bucket metadata.
+/* 加载bucket的meta
+但是从哪里加载呢.  */
 func loadBucketMetadata(ctx context.Context, objectAPI ObjectLayer, bucket string) (BucketMetadata, error) {
 	return loadBucketMetadataParse(ctx, objectAPI, bucket, true)
 }
 
 // parseAllConfigs will parse all configs and populate the private fields.
 // The first error encountered is returned.
+/* bucket meta data解析config file */
 func (b *BucketMetadata) parseAllConfigs(ctx context.Context, objectAPI ObjectLayer) (err error) {
 	if len(b.PolicyConfigJSON) != 0 {
+		/* 开始解析PolicyConfigJSON */
 		b.policyConfig, err = policy.ParseBucketPolicyConfig(bytes.NewReader(b.PolicyConfigJSON), b.Name)
 		if err != nil {
 			return err
@@ -278,6 +300,7 @@ func (b *BucketMetadata) parseAllConfigs(ctx context.Context, objectAPI ObjectLa
 		b.policyConfig = nil
 	}
 
+	/* 为啥还有xml */
 	if len(b.NotificationConfigXML) != 0 {
 		if err = xml.Unmarshal(b.NotificationConfigXML, b.notificationConfig); err != nil {
 			return err
@@ -521,7 +544,8 @@ func (b *BucketMetadata) Save(ctx context.Context, api ObjectLayer) error {
 	return saveConfig(ctx, api, configFile, data)
 }
 
-// migrate config for remote targets by encrypting data if currently unencrypted and kms is configured.
+// migrate config for remote targets by encrypting data if 
+// currently unencrypted and kms is configured.
 func (b *BucketMetadata) migrateTargetConfig(ctx context.Context, objectAPI ObjectLayer) error {
 	var err error
 	// early return if no targets or already encrypted

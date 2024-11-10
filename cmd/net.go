@@ -283,6 +283,7 @@ func extractHostPort(hostAddr string) (string, string, error) {
 // isLocalHost - checks if the given parameter
 // correspond to one of the local IP of the
 // current machine
+/* 判断是不是本机的ip */
 func isLocalHost(host string, port string, localPort string) (bool, error) {
 	hostIPs, err := getHostIP(host)
 	if err != nil {

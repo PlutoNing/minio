@@ -882,6 +882,7 @@ func generateMultiDeleteResponse(quiet bool, deletedObjects []DeletedObject, err
 	return deleteResp
 }
 
+/* 写入状态码到w */
 func writeResponse(w http.ResponseWriter, statusCode int, response []byte, mType mimeType) {
 	if statusCode == 0 {
 		statusCode = 200
@@ -937,6 +938,7 @@ func writeRedirectSeeOther(w http.ResponseWriter, location string) {
 	writeResponse(w, http.StatusSeeOther, nil, mimeNone)
 }
 
+/* 写一个成功的响应 */
 func writeSuccessResponseHeadersOnly(w http.ResponseWriter) {
 	writeResponse(w, http.StatusOK, nil, mimeNone)
 }

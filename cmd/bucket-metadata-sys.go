@@ -43,12 +43,15 @@ import (
 )
 
 // BucketMetadataSys captures all bucket metadata for a given cluster.
+/* 代表一个集群的全部的bucket的meta? */
 type BucketMetadataSys struct {
 	objAPI ObjectLayer
 
 	sync.RWMutex
 	initialized bool
+	/*  */
 	group       *singleflight.Group
+	/* bucket的meta的索引map, 通过名字来查询 */
 	metadataMap map[string]BucketMetadata
 }
 
@@ -98,7 +101,10 @@ func (sys *BucketMetadataSys) Set(bucket string, meta BucketMetadata) {
 	}
 }
 
-func (sys *BucketMetadataSys) updateAndParse(ctx context.Context, bucket string, configFile string, configData []byte, parse bool) (updatedAt time.Time, err error) {
+/* bucketMetaSys的更新配置的方法? */
+func (sys *BucketMetadataSys) updateAndParse(ctx context.Context, bucket string, 
+	configFile string, configData []byte, parse bool) (updatedAt time.Time, err error) {
+	/* 虽然是new, 但是好像其实是过去全局的objlayer */
 	objAPI := newObjectLayerFn()
 	if objAPI == nil {
 		return updatedAt, errServerNotInitialized
@@ -108,6 +114,7 @@ func (sys *BucketMetadataSys) updateAndParse(ctx context.Context, bucket string,
 		return updatedAt, errInvalidArgument
 	}
 
+	/* 加载bucket meta data */
 	meta, err := loadBucketMetadataParse(ctx, objAPI, bucket, parse)
 	if err != nil {
 		if !globalIsErasure && !globalIsDistErasure && errors.Is(err, errVolumeNotFound) {
@@ -224,6 +231,7 @@ func (sys *BucketMetadataSys) Delete(ctx context.Context, bucket string, configF
 
 // Update update bucket metadata for the specified bucket.
 // The configData data should not be modified after being sent here.
+/* BucketMetadataSys的update方法实现 */
 func (sys *BucketMetadataSys) Update(ctx context.Context, bucket string, configFile string, configData []byte) (updatedAt time.Time, err error) {
 	return sys.updateAndParse(ctx, bucket, configFile, configData, true)
 }
@@ -256,6 +264,7 @@ func (sys *BucketMetadataSys) Get(bucket string) (BucketMetadata, error) {
 
 // GetVersioningConfig returns configured versioning config
 // The returned object may not be modified.
+/* 获取bucket的version config */
 func (sys *BucketMetadataSys) GetVersioningConfig(bucket string) (*versioning.Versioning, time.Time, error) {
 	meta, _, err := sys.GetConfig(GlobalContext, bucket)
 	if err != nil {
@@ -386,7 +395,9 @@ func (sys *BucketMetadataSys) GetPolicyConfig(bucket string) (*policy.BucketPoli
 
 // GetQuotaConfig returns configured bucket quota
 // The returned object may not be modified.
+/* 获取bucket的quota */
 func (sys *BucketMetadataSys) GetQuotaConfig(ctx context.Context, bucket string) (*madmin.BucketQuota, time.Time, error) {
+	/*  */
 	meta, _, err := sys.GetConfig(ctx, bucket)
 	if err != nil {
 		if errors.Is(err, errConfigNotFound) {
@@ -455,6 +466,7 @@ var errBucketMetadataNotInitialized = errors.New("bucket metadata not initialize
 // GetConfig returns a specific configuration from the bucket metadata.
 // The returned object may not be modified.
 // reloaded will be true if metadata refreshed from disk
+/*  */
 func (sys *BucketMetadataSys) GetConfig(ctx context.Context, bucket string) (meta BucketMetadata, reloaded bool, err error) {
 	objAPI := newObjectLayerFn()
 	if objAPI == nil {
@@ -471,8 +483,12 @@ func (sys *BucketMetadataSys) GetConfig(ctx context.Context, bucket string) (met
 	if ok {
 		return meta, reloaded, nil
 	}
-
-	val, err, _ := sys.group.Do(bucket, func() (val interface{}, err error) {
+	/* 不ok的时候 */
+	/* 返回的 */
+	val, err, _ := sys.group.Do(bucket, 
+		/* 对这个bucket仅调用一次这个函数? */
+		func() (val interface{}, err error) {
+			/* load这个bucket的meta */
 		meta, err = loadBucketMetadata(ctx, objAPI, bucket)
 		if err != nil {
 			if !sys.Initialized() {
@@ -482,11 +498,13 @@ func (sys *BucketMetadataSys) GetConfig(ctx context.Context, bucket string) (met
 		}
 		return meta, err
 	})
+
 	meta, _ = val.(BucketMetadata)
 	if err != nil {
 		return meta, false, err
 	}
 	sys.Lock()
+	/* 顺便设置一下内存的meta */
 	sys.metadataMap[bucket] = meta
 	sys.Unlock()
 

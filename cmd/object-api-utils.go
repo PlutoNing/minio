@@ -57,6 +57,7 @@ import (
 
 const (
 	// MinIO meta bucket.
+	/* 这个前缀开头的bucket都是minio内部机制使用的 */
 	minioMetaBucket = ".minio.sys"
 	// Multipart meta prefix.
 	mpartMetaPrefix = "multipart"
@@ -95,6 +96,7 @@ func getKeySeparator() string {
 
 // isMinioBucket returns true if given bucket is a MinIO internal
 // bucket and false otherwise.
+/* 判断是不是minio的内部实现使用的bucket */
 func isMinioMetaBucketName(bucket string) bool {
 	return strings.HasPrefix(bucket, minioMetaBucket)
 }
@@ -758,6 +760,7 @@ func getCompressedOffsets(oi ObjectInfo, offset int64, decrypt func([]byte) ([]b
 
 // GetObjectReader is a type that wraps a reader with a lock to
 // provide a ReadCloser interface that unlocks on Close()
+/* 表示一个读取oss返回的res? */
 type GetObjectReader struct {
 	io.Reader
 	ObjInfo    ObjectInfo

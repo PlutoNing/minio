@@ -85,11 +85,14 @@ func (sys *BucketQuotaSys) GetBucketUsageInfo(ctx context.Context, bucket string
 }
 
 // parseBucketQuota parses BucketQuota from json
+/* 解析bucket的quota信息? */
 func parseBucketQuota(bucket string, data []byte) (quotaCfg *madmin.BucketQuota, err error) {
 	quotaCfg = &madmin.BucketQuota{}
+	/* data是madmin.BucketQuota的格式化信息? */
 	if err = json.Unmarshal(data, quotaCfg); err != nil {
 		return quotaCfg, err
 	}
+
 	if !quotaCfg.IsValid() {
 		if quotaCfg.Type == "fifo" {
 			internalLogIf(GlobalContext, errors.New("Detected older 'fifo' quota config, 'fifo' feature is removed and not supported anymore. Please clear your quota configs using 'mc admin bucket quota alias/bucket --clear' and use 'mc ilm add' for expiration of objects"), logger.WarningKind)

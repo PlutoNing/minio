@@ -28,7 +28,9 @@ import (
 type BucketVersioningSys struct{}
 
 // Enabled enabled versioning?
+/* bucket的versioning是什么 */
 func (sys *BucketVersioningSys) Enabled(bucket string) bool {
+	
 	vc, err := sys.Get(bucket)
 	if err != nil {
 		logger.CriticalIf(GlobalContext, err)
@@ -68,11 +70,13 @@ func (sys *BucketVersioningSys) PrefixSuspended(bucket, prefix string) bool {
 }
 
 // Get returns stored bucket policy
+/* 获取bucket的pol? */
 func (sys *BucketVersioningSys) Get(bucket string) (*versioning.Versioning, error) {
 	if bucket == minioMetaBucket || strings.HasPrefix(bucket, minioMetaBucket) {
 		return &versioning.Versioning{XMLNS: "http://s3.amazonaws.com/doc/2006-03-01/"}, nil
 	}
 
+	/* 看来这个确实是存储bucket的meta的服务 */
 	vcfg, _, err := globalBucketMetadataSys.GetVersioningConfig(bucket)
 	return vcfg, err
 }

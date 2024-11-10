@@ -56,12 +56,14 @@ type arnErrs struct {
 type BucketTargetSys struct {
 	sync.RWMutex
 	arnRemotesMap map[string]arnTarget
+	/*  */
 	targetsMap    map[string][]madmin.BucketTarget
 	hMutex        sync.RWMutex
-	hc            map[string]epHealth
-	hcClient      *madmin.AnonymousClient
-	aMutex        sync.RWMutex
-	arnErrsMap    map[string]arnErrs // map of ARN to error count of failures to get target
+	/* hosturl到host的kv */
+	hc         map[string]epHealth
+	hcClient   *madmin.AnonymousClient
+	aMutex     sync.RWMutex
+	arnErrsMap map[string]arnErrs // map of ARN to error count of failures to get target
 }
 
 type latencyStat struct {
@@ -83,9 +85,11 @@ func (l *latencyStat) update(d time.Duration) {
 }
 
 // epHealth struct represents health of a replication target endpoint.
+/* 表示一个远程target的信息 */
 type epHealth struct {
-	Endpoint        string
-	Scheme          string
+	Endpoint string
+	Scheme   string
+	/* 是否在线 */
 	Online          bool
 	lastOnline      time.Time
 	lastHCAt        time.Time
@@ -95,6 +99,7 @@ type epHealth struct {
 
 // isOffline returns current liveness result of remote target. Add endpoint to
 // healthCheck map if missing and default to online status
+/* 判断远程的target是不是下线了. 这个target是什么. */
 func (sys *BucketTargetSys) isOffline(ep *url.URL) bool {
 	sys.hMutex.RLock()
 	defer sys.hMutex.RUnlock()
@@ -115,6 +120,7 @@ func (sys *BucketTargetSys) markOffline(ep *url.URL) {
 	}
 }
 
+/* HC是什么的简写 */
 func (sys *BucketTargetSys) initHC(ep *url.URL) {
 	sys.hMutex.Lock()
 	sys.hc[ep.Host] = epHealth{
@@ -316,17 +322,20 @@ func (sys *BucketTargetSys) Delete(bucket string) {
 }
 
 // SetTarget - sets a new minio-go client target for this bucket.
+/* bucket的client target是什么 */
 func (sys *BucketTargetSys) SetTarget(ctx context.Context, bucket string, tgt *madmin.BucketTarget, update bool) error {
 	if !tgt.Type.IsValid() && !update {
 		return BucketRemoteArnTypeInvalid{Bucket: bucket}
 	}
+	/*  */
 	clnt, err := sys.getRemoteTargetClient(tgt)
+
 	if err != nil {
 		return BucketRemoteTargetNotFound{Bucket: tgt.TargetBucket, Err: err}
 	}
 	// validate if target credentials are ok
 	exists, err := clnt.BucketExists(ctx, tgt.TargetBucket)
-	if err != nil {
+	if err != nil {/* bucket不可available */
 		switch minio.ToErrorResponse(err).Code {
 		case "NoSuchBucket":
 			return BucketRemoteTargetNotFound{Bucket: tgt.TargetBucket, Err: err}
@@ -338,6 +347,7 @@ func (sys *BucketTargetSys) SetTarget(ctx context.Context, bucket string, tgt *m
 	if !exists {
 		return BucketRemoteTargetNotFound{Bucket: tgt.TargetBucket}
 	}
+
 	if tgt.Type == madmin.ReplicationService {
 		if !globalBucketVersioningSys.Enabled(bucket) {
 			return BucketReplicationSourceNotVersioned{Bucket: bucket}
@@ -535,6 +545,7 @@ func (sys *BucketTargetSys) GetRemoteTargetClient(bucket, arn string) *TargetCli
 }
 
 // GetRemoteBucketTargetByArn returns BucketTarget for a ARN
+/* 查询bucket的remote target中符合arn的 */
 func (sys *BucketTargetSys) GetRemoteBucketTargetByArn(ctx context.Context, bucket, arn string) madmin.BucketTarget {
 	sys.RLock()
 	defer sys.RUnlock()
@@ -632,6 +643,7 @@ func (sys *BucketTargetSys) set(bucket string, meta BucketMetadata) {
 }
 
 // Returns a minio-go Client configured to access remote host described in replication target config.
+/* 获取?创建?minio客户端 */
 func (sys *BucketTargetSys) getRemoteTargetClient(tcfg *madmin.BucketTarget) (*TargetClient, error) {
 	config := tcfg.Credentials
 	creds := credentials.NewStaticV4(config.AccessKey, config.SecretKey, "")
@@ -642,6 +654,7 @@ func (sys *BucketTargetSys) getRemoteTargetClient(tcfg *madmin.BucketTarget) (*T
 		Region:    tcfg.Region,
 		Transport: globalRemoteTargetTransport,
 	})
+
 	if err != nil {
 		return nil, err
 	}
@@ -651,6 +664,7 @@ func (sys *BucketTargetSys) getRemoteTargetClient(tcfg *madmin.BucketTarget) (*T
 	if tcfg.HealthCheckDuration >= 1 { // require minimum health check duration of 1 sec.
 		hcDuration = tcfg.HealthCheckDuration
 	}
+
 	tc := &TargetClient{
 		Client:              api,
 		healthCheckDuration: hcDuration,
@@ -667,24 +681,29 @@ func (sys *BucketTargetSys) getRemoteTargetClient(tcfg *madmin.BucketTarget) (*T
 }
 
 // getRemoteARN gets existing ARN for an endpoint or generates a new one.
+/*  */
 func (sys *BucketTargetSys) getRemoteARN(bucket string, target *madmin.BucketTarget, deplID string) (arn string, exists bool) {
 	if target == nil {
 		return
 	}
 	sys.RLock()
 	defer sys.RUnlock()
+	/* 获取bucket的target */
 	tgts := sys.targetsMap[bucket]
 	for _, tgt := range tgts {
 		if tgt.Type == target.Type &&
 			tgt.TargetBucket == target.TargetBucket &&
 			target.URL().String() == tgt.URL().String() &&
 			tgt.Credentials.AccessKey == target.Credentials.AccessKey {
+				/* 这个target是匹配的 */
 			return tgt.Arn, true
 		}
 	}
+
 	if !target.Type.IsValid() {
 		return
 	}
+
 	return generateARN(target, deplID), false
 }
 
@@ -755,6 +774,7 @@ func parseBucketTargetConfig(bucket string, cdata, cmetadata []byte) (*madmin.Bu
 }
 
 // TargetClient is the struct for remote target client.
+/* remote target client是什么 */
 type TargetClient struct {
 	*minio.Client
 	healthCheckDuration time.Duration

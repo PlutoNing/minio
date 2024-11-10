@@ -49,6 +49,7 @@ const (
 )
 
 // PutBucketQuotaConfigHandler - PUT Bucket quota configuration.
+/* 设置bucket的配额机制? */
 // ----------
 // Places a quota configuration on the specified bucket. The quota
 // specified in the quota configuration will be applied by default
@@ -57,6 +58,7 @@ func (a adminAPIHandlers) PutBucketQuotaConfigHandler(w http.ResponseWriter, r *
 	ctx := r.Context()
 
 	objectAPI, _ := validateAdminReq(ctx, w, r, policy.SetBucketQuotaAdminAction)
+
 	if objectAPI == nil {
 		return
 	}
@@ -81,6 +83,7 @@ func (a adminAPIHandlers) PutBucketQuotaConfigHandler(w http.ResponseWriter, r *
 		return
 	}
 
+	/* 更新配置 */
 	updatedAt, err := globalBucketMetadataSys.Update(ctx, bucket, bucketQuotaConfigFile, data)
 	if err != nil {
 		writeErrorResponse(ctx, w, toAPIError(ctx, err), r.URL)
@@ -98,6 +101,7 @@ func (a adminAPIHandlers) PutBucketQuotaConfigHandler(w http.ResponseWriter, r *
 	}
 
 	// Call site replication hook.
+	/* 这里好像是也更新peer的meta? */
 	replLogIf(ctx, globalSiteReplicationSys.BucketMetaHook(ctx, bucketMeta))
 
 	// Write success response.
@@ -105,6 +109,7 @@ func (a adminAPIHandlers) PutBucketQuotaConfigHandler(w http.ResponseWriter, r *
 }
 
 // GetBucketQuotaConfigHandler - gets bucket quota configuration
+/* 获取bucket的quota信息? */
 func (a adminAPIHandlers) GetBucketQuotaConfigHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -114,6 +119,7 @@ func (a adminAPIHandlers) GetBucketQuotaConfigHandler(w http.ResponseWriter, r *
 	}
 
 	vars := mux.Vars(r)
+	/* 获取涉及的bucket */
 	bucket := pathClean(vars["bucket"])
 
 	if _, err := objectAPI.GetBucketInfo(ctx, bucket, BucketOptions{}); err != nil {
@@ -121,6 +127,7 @@ func (a adminAPIHandlers) GetBucketQuotaConfigHandler(w http.ResponseWriter, r *
 		return
 	}
 
+	/* 获取bucket的quota config */
 	config, _, err := globalBucketMetadataSys.GetQuotaConfig(ctx, bucket)
 	if err != nil {
 		writeErrorResponseJSON(ctx, w, toAdminAPIErr(ctx, err), r.URL)
@@ -134,10 +141,12 @@ func (a adminAPIHandlers) GetBucketQuotaConfigHandler(w http.ResponseWriter, r *
 	}
 
 	// Write success response.
+	/* 把查得的config data写回w? */
 	writeSuccessResponseJSON(w, configData)
 }
 
 // SetRemoteTargetHandler - sets a remote target for bucket
+/*  */
 func (a adminAPIHandlers) SetRemoteTargetHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -169,25 +178,32 @@ func (a adminAPIHandlers) SetRemoteTargetHandler(w http.ResponseWriter, r *http.
 		writeErrorResponseJSON(ctx, w, errorCodes.ToAPIErrWithErr(ErrAdminConfigBadJSON, err), r.URL)
 		return
 	}
+
 	var target madmin.BucketTarget
+
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
+	/* 反序列出target */
 	if err = json.Unmarshal(reqBytes, &target); err != nil {
 		writeErrorResponseJSON(ctx, w, errorCodes.ToAPIErrWithErr(ErrAdminConfigBadJSON, err), r.URL)
 		return
 	}
+
 	sameTarget, _ := isLocalHost(target.URL().Hostname(), target.URL().Port(), globalMinioPort)
-	if sameTarget && bucket == target.TargetBucket {
+	if sameTarget && bucket == target.TargetBucket {/* 不能操作本机的 */
 		writeErrorResponseJSON(ctx, w, errorCodes.ToAPIErr(ErrBucketRemoteIdenticalToSource), r.URL)
 		return
 	}
 
 	target.SourceBucket = bucket
 	var ops []madmin.TargetUpdateType
+
 	if update {
 		ops = madmin.GetTargetUpdateOps(r.Form)
 	} else {
+		/* 如果不update? 那准备干嘛 */
 		var exists bool // true if arn exists
 		target.Arn, exists = globalBucketTargetSys.getRemoteARN(bucket, &target, "")
+
 		if exists && target.Arn != "" { // return pre-existing ARN
 			data, err := json.Marshal(target.Arn)
 			if err != nil {
@@ -195,14 +211,18 @@ func (a adminAPIHandlers) SetRemoteTargetHandler(w http.ResponseWriter, r *http.
 				return
 			}
 			// Write success response.
+			/* 不update的话, 好像就是直接返回arn */
 			writeSuccessResponseJSON(w, data)
 			return
 		}
 	}
+	/* 如果要update的情况下 */
+
 	if target.Arn == "" {
 		writeErrorResponseJSON(ctx, w, errorCodes.ToAPIErrWithErr(ErrAdminConfigBadJSON, err), r.URL)
 		return
 	}
+
 	if globalSiteReplicationSys.isEnabled() && !update {
 		writeErrorResponseJSON(ctx, w, errorCodes.ToAPIErrWithErr(ErrRemoteTargetDenyAddError, err), r.URL)
 		return
@@ -215,9 +235,11 @@ func (a adminAPIHandlers) SetRemoteTargetHandler(w http.ResponseWriter, r *http.
 			writeErrorResponseJSON(ctx, w, errorCodes.ToAPIErrWithErr(ErrRemoteTargetNotFoundError, err), r.URL)
 			return
 		}
-		for _, op := range ops {
+
+		for _, op := range ops {/* 这里开始逐个执行req里的ops? */
 			switch op {
 			case madmin.CredentialsUpdateType:
+				/* update远程tgt的cred */
 				if !globalSiteReplicationSys.isEnabled() {
 					// credentials update is possible only in bucket replication. User will never
 					// know the site replicator creds.
@@ -246,6 +268,8 @@ func (a adminAPIHandlers) SetRemoteTargetHandler(w http.ResponseWriter, r *http.
 		writeErrorResponseJSON(ctx, w, errorCodes.ToAPIErrWithErr(ErrReplicationBandwidthLimitError, err), r.URL)
 		return
 	}
+
+	/* 为什么这里又设置tgt */
 	if err = globalBucketTargetSys.SetTarget(ctx, bucket, &target, update); err != nil {
 		switch err.(type) {
 		case RemoteTargetConnectionErr:

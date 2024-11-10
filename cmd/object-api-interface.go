@@ -60,6 +60,7 @@ const (
 )
 
 // ObjectOptions represents object options for ObjectLayer object operations
+/* 代表什么? */
 type ObjectOptions struct {
 	ServerSideEncryption encrypt.ServerSide
 	VersionSuspended     bool      // indicates if the bucket was previously versioned but is currently suspended.
@@ -240,7 +241,7 @@ func (o *ObjectOptions) SetEvalRetentionBypassFn(f EvalRetentionBypassFn) {
 }
 
 // ObjectLayer implements primitives for object API layer.
-/*  */
+/* 对象层的api? */
 type ObjectLayer interface {
 	// Locking operations on object.
 	NewNSLock(bucket string, objects ...string) RWLocker
@@ -255,6 +256,7 @@ type ObjectLayer interface {
 
 	// Bucket operations.
 	MakeBucket(ctx context.Context, bucket string, opts MakeBucketOptions) error
+	/*  */
 	GetBucketInfo(ctx context.Context, bucket string, opts BucketOptions) (bucketInfo BucketInfo, err error)
 	ListBuckets(ctx context.Context, opts BucketOptions) (buckets []BucketInfo, err error)
 	DeleteBucket(ctx context.Context, bucket string, opts DeleteBucketOptions) error

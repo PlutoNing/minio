@@ -151,11 +151,15 @@ func (r *ReqInfo) PopulateTagsMap(tagsMap map[string]string) {
 }
 
 // SetReqInfo sets ReqInfo in the context.
+/*  */
 func SetReqInfo(ctx context.Context, req *ReqInfo) context.Context {
 	if ctx == nil {
 		LogIf(context.Background(), "", fmt.Errorf("context is nil"))
 		return nil
 	}
+	/* 这段代码实现了 WithValue 函数，用于创建一个包含新的键值对的 Context。
+	该函数返回一个新的 Context，其中包含了传入的 key 和 val。这在 Go 中的 
+	context 包中很常见，用于传递跨请求或跨 API 的上下文数据。 */
 	return context.WithValue(ctx, contextLogKey, req)
 }
 

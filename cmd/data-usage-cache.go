@@ -872,6 +872,7 @@ func (d *dataUsageCache) merge(other dataUsageCache) {
 	}
 }
 
+/* oss的接口 */
 type objectIO interface {
 	GetObjectNInfo(ctx context.Context, bucket, object string, rs *HTTPRangeSpec, h http.Header, opts ObjectOptions) (reader *GetObjectReader, err error)
 	PutObject(ctx context.Context, bucket, object string, data *PutObjReader, opts ObjectOptions) (objInfo ObjectInfo, err error)
